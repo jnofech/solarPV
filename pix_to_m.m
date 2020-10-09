@@ -26,7 +26,7 @@ function varargout = pix_to_m(varargin)
 %       respectively.
 %       Only works when `arr` is a 3D 
 
-    folder = "output/";
+    output_path_save = "output/";
 
     switch nargin
         case 2
@@ -36,7 +36,17 @@ function varargout = pix_to_m(varargin)
         case 3
             name = varargin{1};
             arr = varargin{2};
+            if isequal(class(varargin{3}),"char")
+                theta_CCW = 0;
+                output_path_save = varargin{3};
+            else
+                theta_CCW = varargin{3};
+            end
+        case 4
+            name = varargin{1};
+            arr = varargin{2};
             theta_CCW = varargin{3};
+            output_path_save = varargin{4};
         otherwise
             error("Use `pix_to_m(name,arr)` or `pix_to_m(name,arr,theta_CCW)`.");
     end
@@ -45,18 +55,18 @@ function varargout = pix_to_m(varargin)
             % Assumed to be height map
             xmax = size(arr,2);   ymax = size(arr,1);
             length = max(xmax,ymax);
-            output_name_heightmap = "output/"+name+"_heightmap_"+length+"_percent2m.mat";
+            output_name_heightmap = output_path_save+name+"_heightmap_"+length+"_percent2m.mat";
             output_name           = output_name_heightmap;
             mode = 'height';
         case 3
             % Assumed to be colour image. Heightmap is used to convert to
             % m, since the colour map isn't perfectly top down.
-            files = dir("output/");          % Struct of filenames
+            files = dir(output_path_save);          % Struct of filenames
             files = join(string( natsortfiles({files.name}) )); % Space-separated filenames in one string, naturally sorted
             expression = name+"_heightmap_\w*_percent2m.mat";
             files_heightmap = regexp(files,expression,"match");
-            output_name_heightmap = folder+files_heightmap(end);       % Selects the highest-resolution file.
-            output_name           = "output/"+name+"_map_percent2m.mat";
+            output_name_heightmap = output_path_save+files_heightmap(end);       % Selects the highest-resolution file.
+            output_name           = output_path_save+name+"_map_percent2m.mat";
             mode = 'map';
         otherwise
             output_name_heightmap   = "nope";
@@ -75,7 +85,7 @@ function varargout = pix_to_m(varargin)
             Z = arr;
             % Make the plot!
             figure('name',name);
-            surf(Z,'edgecolor','none'); set(gca,'ydir','reverse');
+            surf(Z,'edgecolor','none'); set(gca,'ydir','reverse');  colormap(brewermap([],'RdYlBu'));
             colorbar;
             shading interp;
             axis image;
@@ -126,7 +136,8 @@ function varargout = pix_to_m(varargin)
                         X = (X-1) * pix2m;
                         Y = (Y-1) * pix2m;
                         close;
-%                         surf(X,Y,Z,'edgecolor','none'); set(gca,'ydir','reverse');
+%                         surf(X,Y,Z,'edgecolor','none');
+%                         set(gca,'ydir','reverse');  colormap(brewermap([],'RdYlBu'));
 %                         colorbar;
 %                         shading interp;
 %                         axis image;
@@ -142,13 +153,14 @@ function varargout = pix_to_m(varargin)
         if ~isfile(output_name_heightmap)
             % If 3D output does not exist:
             disp("3D mesh needed to account for camera tilt. However, "+...
-                 output_name_heightmap+" not found. Running `pix2m` for 3D mesh.");
+                 output_name_heightmap+" not found. Running `pix_to_m` for 3D mesh.");
             heights_gen(name);
+            % ^ (?) Does this help? Shouldn't I be running `pix_to_m` on
+            % heightmap instead of just heights_gen?
         end
         % Rename the `<building>_heightmap_percent2m.mat` variables for
         % safekeeping!
         load(output_name_heightmap,'pix2m','X1','Y1','X2','Y2','xmax','ymax');
-        % ^ Loads 'pix2m','X1','X2','Y1','Y2','xmax','ymax'.
         X1_h = X1;    Y1_h = Y1;
         X2_h = X2;    Y2_h = Y2;
         xmax_h = xmax;  ymax_h = ymax;

@@ -1,4 +1,4 @@
-function varargout = heights_gen(varargin);
+function varargout = heights_gen(varargin)
 %HEIGHTS_GEN saves & returns a height map for a building `name`, in pixels.
 %Will generate a new height map if one has not yet been created.
 %
@@ -28,21 +28,33 @@ function varargout = heights_gen(varargin);
             warning("Building(): No pixel length specified; setting to default of 400 (no rotation).");
             length = 400;
             theta_CCW = 0;
+            input_path_meshes = "meshes/";
+            output_path_save = "output/";
         case 2
             name = varargin{1};
             length = varargin{2};
             theta_CCW = 0;
+            input_path_meshes = "meshes/";
+            output_path_save = "output/";
         case 3
             name = varargin{1};
             length = varargin{2};
             theta_CCW = varargin{3};
+            input_path_meshes = "meshes/";
+            output_path_save = "output/";
+        case 5
+            name = varargin{1};
+            length = varargin{2};
+            theta_CCW = varargin{3};
+            input_path_meshes = varargin{4};
+            output_path_save = varargin{5};
         otherwise
             error('Use `heights_gen(name,length,theta_CCW)`.');
     end
     
-    folder = "meshes/";
-    fname  = folder+name+".stl";
-    output_name = "output/"+name+"_"+length+"pix_"+theta_CCW+"deg.mat";
+%     input_path_meshes = "meshes/";
+    fname  = input_path_meshes+name+".stl";
+    output_name = output_path_save+name+"_"+length+"pix_"+theta_CCW+"deg.mat";
     
     % Read backup (if any) to check for changes to the STL file
     if isfile(output_name)

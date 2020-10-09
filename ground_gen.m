@@ -8,7 +8,7 @@ function [Z_terrain] = ground_gen(Z,X,Y,pix2m)
     m_max = 5/12;
     panel_size_pix = 40;
     Z_faketerrain = ones(size(Z)) * -99999;
-    issurface = find_surfaces(Z,Z_faketerrain,pix2m, m_max, panel_size_pix);
+    [issurface,~] = find_surfaces(Z,Z_faketerrain,pix2m, m_max, panel_size_pix,1);
     issurface = bwareaopen(issurface, ceil(numel(Z)*0.0025),4); % Ignore every blob that takes <0.25% of entire image
     surfaces = bwlabel(issurface,4);
     n_surfaces = max(surfaces,[],'all');
@@ -87,7 +87,7 @@ function [Z_terrain] = ground_gen(Z,X,Y,pix2m)
         
         % Edge detection?
         m_max = 12/12;
-        isblob = find_surfaces(Z_eroded,Z_faketerrain,pix2m, m_max, panel_size_pix);
+        [isblob,~] = find_surfaces(Z_eroded,Z_faketerrain,pix2m, m_max, panel_size_pix,1);
         isblob = double(bwareaopen(isblob, ceil(numel(Z)*0.05),4)); % Ignore every blob that takes <5% of entire image
         Z_blobs = Z_eroded .* isblob;
         Z_blobs(Z_blobs == 0) = nan;      % Edges and deleted blobs are masked out

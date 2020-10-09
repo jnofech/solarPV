@@ -1,4 +1,4 @@
-function issurface = find_surfaces(Z,Z_terrain,pix2m,m_max,minsize_pix)
+function [issurface,isroof] = find_surfaces(Z,Z_terrain,pix2m,m_max,minsize_pix,roof_mindiameter)
 %FIND_SURFACES() identifies surfaces from a height map; i.e. any structure 
 %   that is not the ground, an edge, or tiny.
 %
@@ -27,13 +27,12 @@ function issurface = find_surfaces(Z,Z_terrain,pix2m,m_max,minsize_pix)
     u = symunit;
     % Find gradients from height map (NOT actual face slopes)
     [Zx,Zy] = gradient(Z, pix2m);     % Finds gradient, with each pixel representing `pix2m_h` metres.
-    m = sqrt( Zx.^2 + Zy.^2 );          % Magnitude of the slope (i.e. slope in direction of deepest ascent)
+    m = sqrt( Zx.^2 + Zy.^2 );        % Magnitude of the slope (i.e. slope in direction of deepest ascent)
     
-    % Thicken the gradient map
+    % Edge detection
     Z_steep = (m > m_max);  % 1 where slope is too STEEP.
         % Quickly clean!
         Z_steep = bwareaopen(Z_steep,ceil(numel(Z)*1.9e-5));   % Quickly cleaning "noise", where slope is unintentionally high.
-%         warning("Should set `bwareaopen` minimum pixel count to some fraction of image resolution.");
     se_1pixel = strel('disk',1);
     Z_steepsurface = imerode(Z_steep,se_1pixel);   % Steep surfaces, NOT edges.
     Z_edge = Z_steep - Z_steepsurface;
@@ -45,6 +44,11 @@ function issurface = find_surfaces(Z,Z_terrain,pix2m,m_max,minsize_pix)
 
     % Remove structures with less area than minimum roof area.
     issurface = bwareaopen(issurface,minsize_pix);   % Any surface that exceeds specified area.
+    
+    % Roof detection! (Surfaces that are large enough to fit a tiny solar
+    % panel under California regulations regarding edge distance)
+    roofs_temp = blob_clean(issurface,roof_mindiameter);
+    isroof = logical(roofs_temp);
     
 %     % Plot me a thing
 %     figure(1);

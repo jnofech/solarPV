@@ -1,4 +1,4 @@
-function map = map_read(name);
+function map = map_read(name,input_path_photos,output_path_save)
 %MAP_READ returns a 2D satellite photo for a building `name`, in pixels.
 %Will read '.png' and '.jpg' files.
 %
@@ -12,10 +12,10 @@ function map = map_read(name);
 %   `map = map_read(name)`:
 %       `map` is a colour image (3D array) of the building.
     name = string(name);
-    folder = "images/";
-    folder_output = "output/";
-    fname  = folder+name;
-    output_name = folder_output+name+"_map_rotation.mat";
+%     input_path_photos = "images/";
+%     output_path_save = "output/";
+    fname  = input_path_photos+name;
+    output_name = output_path_save+name+"_map_rotation.mat";
     
     % Read file
     if isfile(fname+".png")
