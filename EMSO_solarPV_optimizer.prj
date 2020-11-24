@@ -1,0 +1,142 @@
+<deployment-project plugin="plugin.apptool" plugin-version="1.0">
+  <configuration build-checksum="2917597575" file="C:\Users\Win10\Desktop\EMSO_buildings_app_v2.0\EMSO_solarPV_optimizer.prj" location="C:\Users\Win10\Desktop\EMSO_buildings_app_v2.0" name="EMSO_solarPV_optimizer" target="target.mlapps" target-name="Package App">
+    <param.appname>EMSO_solarPV_optimizer</param.appname>
+    <param.authnamewatermark>Joseph Nofech</param.authnamewatermark>
+    <param.email>jnofech@ualberta.ca</param.email>
+    <param.company>University of Alberta</param.company>
+    <param.icon />
+    <param.icons />
+    <param.summary>Code for rooftop segmentation + classification from Joseph Nofech. Includes `generate_tables.m` (for PV optimization) from N. Narjabadifam.</param.summary>
+    <param.description>Code for rooftop segmentation + classification from Joseph Nofech, and a work-in-progress function for PV optimization from Nima Narjabadifam. This main analysis requires 3D .STL models and north-facing bird's-eye-view satellite photos for each building.
+
+For buildings that do not have this data available: The user runs `EMSO_solarPV_model_generator.mlapp` (or simply selects "&lt;b&gt;Generate New 3D Models&lt;/b&gt;" in the main `EMSO_solar_V_optimizer.mlapp` interface), and selects any number of buildings via this Google Static Maps-integrated app. A function making heavy use of Java Robot (`automate_model_generation.m`) then automatically generates 3D .STL models and 2D bird's-eye-view satellite photos of each new target building.
+
+Note that external softwares (RenderDoc, Chromium, and Blender) are required in order to extract 3D models of selected buildings. The specific versions that this code was tested on are:
+&lt;ul&gt;&lt;li&gt;RenderDoc v1.1&lt;/li&gt;&lt;li&gt;Chromium 61.0 (with "--disable-gpu-sandbox --gpu-startup-dialog --use-angle=gl" used as a command-line argument in its shortcut)&lt;/li&gt;&lt;li&gt;Blender 2.81 (with Elie Michel's "Maps Models Importer v0.1.3" Addon installed; see https://github.com/eliemichel/MapsModelsImporter/releases/tag/v0.1.3)&lt;/li&gt;&lt;/ul&gt;
+Other versions of these softwares have not been tested, and may not work.
+
+Also note that these three softwares MUST have shortcuts respectively named "RenderDoc", "Chromium", and "Blender" in the main file path.</param.description>
+    <param.screenshot>${PROJECT_ROOT}\UI_optimizer_v1.0.png</param.screenshot>
+    <param.version>2.0</param.version>
+    <param.products.name>
+      <item>MATLAB</item>
+    </param.products.name>
+    <param.products.id>
+      <item>1</item>
+    </param.products.id>
+    <param.products.version>
+      <item>9.7</item>
+    </param.products.version>
+    <param.platforms />
+    <param.output>${PROJECT_ROOT}</param.output>
+    <param.guid>dba8d32e-853d-4b98-b8c9-01690a69b91c</param.guid>
+    <unset>
+      <param.icon />
+      <param.icons />
+      <param.platforms />
+      <param.output />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\EMSO_solarPV_optimizer.mlapp</file>
+    </fileset.main>
+    <fileset.depfun />
+    <fileset.resources>
+      <file>${PROJECT_ROOT}\api_key.mat</file>
+      <file>${PROJECT_ROOT}\automate_model_generation.m</file>
+      <file>${PROJECT_ROOT}\blender.lnk</file>
+      <file>${PROJECT_ROOT}\blob_classify.m</file>
+      <file>${PROJECT_ROOT}\blob_clean.m</file>
+      <file>${PROJECT_ROOT}\blob_clean_spikes.m</file>
+      <file>${PROJECT_ROOT}\blob_heights_split.m</file>
+      <file>${PROJECT_ROOT}\bresenham.m</file>
+      <file>${PROJECT_ROOT}\brewermap.m</file>
+      <file>${PROJECT_ROOT}\Building.m</file>
+      <file>${PROJECT_ROOT}\Chromium.lnk</file>
+      <file>${PROJECT_ROOT}\Clear-sky-index.xlsx</file>
+      <file>${PROJECT_ROOT}\crop.m</file>
+      <file>${PROJECT_ROOT}\EMSO_solarPV_model_generator.mlapp</file>
+      <file>${PROJECT_ROOT}\EMSO_solarPV_model_generator_queue.mat</file>
+      <file>${PROJECT_ROOT}\EMSO_solarPV_optimizer.mlapp</file>
+      <file>${PROJECT_ROOT}\EMSO_solarPV_optimizer.prj</file>
+      <file>${PROJECT_ROOT}\file_exists.m</file>
+      <file>${PROJECT_ROOT}\find_poly.m</file>
+      <file>${PROJECT_ROOT}\find_poly_obstacles.m</file>
+      <file>${PROJECT_ROOT}\find_surfaces.m</file>
+      <file>${PROJECT_ROOT}\generate_tables.m</file>
+      <file>${PROJECT_ROOT}\getBorders.m</file>
+      <file>${PROJECT_ROOT}\Google_Set3D.png</file>
+      <file>${PROJECT_ROOT}\ground_gen.m</file>
+      <file>${PROJECT_ROOT}\heights_check.m</file>
+      <file>${PROJECT_ROOT}\heights_gen.m</file>
+      <file>${PROJECT_ROOT}\hillshade.m</file>
+      <file>${PROJECT_ROOT}\images</file>
+      <file>${PROJECT_ROOT}\is_clockwise.m</file>
+      <file>${PROJECT_ROOT}\is_responding.bat</file>
+      <file>${PROJECT_ROOT}\is_running.bat</file>
+      <file>${PROJECT_ROOT}\makescale.m</file>
+      <file>${PROJECT_ROOT}\map_read.m</file>
+      <file>${PROJECT_ROOT}\map_reproject.m</file>
+      <file>${PROJECT_ROOT}\map_rotate.m</file>
+      <file>${PROJECT_ROOT}\meanangle.m</file>
+      <file>${PROJECT_ROOT}\meshes</file>
+      <file>${PROJECT_ROOT}\natsort.m</file>
+      <file>${PROJECT_ROOT}\natsortfiles.m</file>
+      <file>${PROJECT_ROOT}\output</file>
+      <file>${PROJECT_ROOT}\pgonCorners.m</file>
+      <file>${PROJECT_ROOT}\pix_to_m.m</file>
+      <file>${PROJECT_ROOT}\plot_figures.m</file>
+      <file>${PROJECT_ROOT}\plot_GMap.m</file>
+      <file>${PROJECT_ROOT}\poly_approx.m</file>
+      <file>${PROJECT_ROOT}\readme.txt</file>
+      <file>${PROJECT_ROOT}\regional_minmax_split.m</file>
+      <file>${PROJECT_ROOT}\RenderDoc.lnk</file>
+      <file>${PROJECT_ROOT}\RenderDoc_textbox.png</file>
+      <file>${PROJECT_ROOT}\RenderDoc_textbox2.png</file>
+      <file>${PROJECT_ROOT}\RenderDoc_timer.png</file>
+      <file>${PROJECT_ROOT}\roi_app_noUI.m</file>
+      <file>${PROJECT_ROOT}\roi_app_test.mlapp</file>
+      <file>${PROJECT_ROOT}\roi_mask_gen.m</file>
+      <file>${PROJECT_ROOT}\shading_analysis.m</file>
+      <file>${PROJECT_ROOT}\shading_raytrace.m</file>
+      <file>${PROJECT_ROOT}\stl_to_pix.m</file>
+      <file>${PROJECT_ROOT}\stlread.m</file>
+      <file>${PROJECT_ROOT}\switch.vbs</file>
+      <file>${PROJECT_ROOT}\takeScreenshot.m</file>
+      <file>${PROJECT_ROOT}\ui_getButton.m</file>
+      <file>${PROJECT_ROOT}\UI_model_generator_v1.0.png</file>
+      <file>${PROJECT_ROOT}\UI_optimizer_v1.0.png</file>
+      <file>${PROJECT_ROOT}\val.m</file>
+    </fileset.resources>
+    <fileset.package />
+    <build-deliverables>
+      <file location="C:\Users\Win10\Desktop" name="EMSO_buildings_app_v2.0" optional="false">C:\Users\Win10\Desktop\EMSO_buildings_app_v2.0</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2019b</root>
+      <toolboxes>
+        <toolbox name="neuralnetwork" />
+      </toolboxes>
+      <toolbox>
+        <neuralnetwork>
+          <enabled>true</enabled>
+        </neuralnetwork>
+      </toolbox>
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.0</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

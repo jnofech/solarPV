@@ -26,6 +26,10 @@ classdef Building
     %   Minimum required walkway width between panel and edge, in m (or 
     %   specified units using `symunit`).
     %
+    % 'allow_custom_mask' (default: true) : logical
+    %   If enabled, allows user to customize heightmap mask, instead of
+    %   letting the code assume one automatically.
+    %
     % 'force_run_poly' (default: false) : logical
     %   If enabled, forces polygon approx. to run regardless of whether
     %   saved files exist.
@@ -70,6 +74,7 @@ classdef Building
         m;              % Magnitude of slope.
         pix2m;          % Metres/pixel, for Z-map
         terrain;        % Height map of approximate terrain elevation.
+        terrain_nomask; % Height map of approximate terrain elevation, without mask applied.
 %         issurface;      % Binary map indicating non-ground surfaces.
         isroof;         % Binary map indicating roofs.
         isroof_p;       % Binary map indicating roofs, WITH parapets.
@@ -79,9 +84,11 @@ classdef Building
         roof_isbad;     % Regions where each roof (value corresponding to `roofs`) has unreliable values.
         info;           % Table containing information of each blob.
         shadows;        % Relative amount of shading on building.
-        % Trash pile
         map;            % Colour image of the building.
         map_r;          % Colour image of the building, reprojected to mesh's proportions.
+        % Misc
+        output_path_save;   % Output path for "savefiles", e.g. shadow study results.
+        % Trash pile
         pix2m_r_x;      % Metres/pixel, for reprojected C-map
         pix2m_r_y;      % Metres/pixel, for reprojected C-map
     end
@@ -104,6 +111,7 @@ classdef Building
             shadow_scale = 0.3;                     % 0.3 DEFAULT
             lat = 53.5461;                          % Edmonton's latitude (deg, North)
             force_run_shadow = false;               % Run the code and forcibly overwrite previous file?
+            allow_custom_mask = true;               % Allow user-inputted mask?
             
             % Folder names
             input_path_meshes = "meshes/";
@@ -145,6 +153,8 @@ classdef Building
                             if sUnits(1) == 1
                                 roof_edgedistance = roof_edgedistance(1)*u.m;
                             end
+                        elseif isequal(lower(varargin{i}),'allow_custom_mask')
+                            allow_custom_mask = varargin{i+1};
                         elseif isequal(lower(varargin{i}),'force_run_poly')
                             force_run_poly = varargin{i+1};
                         elseif isequal(lower(varargin{i}),'lat') || isequal(lower(varargin{i}),'latitude')
@@ -156,33 +166,35 @@ classdef Building
                             
                         elseif isequal(lower(varargin{i}),'input_path_meshes')
                             input_path_meshes = convertStringsToChars(varargin{i+1});
-                            if input_path_meshes(end) ~= '/'
+                            if ~ismember(input_path_meshes(end),['/','\'])
                                 input_path_meshes = [input_path_meshes,'/'];
                             end
                         elseif isequal(lower(varargin{i}),'input_path_photos')
                             input_path_photos = convertStringsToChars(varargin{i+1});
-                            if input_path_photos(end) ~= '/'
+                            if ~ismember(input_path_photos(end),['/','\'])
                                 input_path_photos = [input_path_photos,'/'];
                             end
                         elseif isequal(lower(varargin{i}),'output_path_save')
                             output_path_save = convertStringsToChars(varargin{i+1});
-                            if output_path_save(end) ~= '/'
+                            if ~ismember(output_path_save(end),['/','\'])
                                 output_path_save = [output_path_save,'/'];
                             end
                         elseif isequal(lower(varargin{i}),'output_path')
                             output_path = convertStringsToChars(varargin{i+1});
-                            if output_path(end) ~= '/'
+                            if ~ismember(output_path(end),['/','\'])
                                 output_path = [output_path,'/'];
                             end
                         end
                     end
             end
+            obj.output_path_save = output_path_save;
             
             % Now, with the building named: Initialize!
             obj.map = map_read(obj.name,input_path_photos,output_path_save);   % Reads satellite photo. This cmap faces North.
-            fname_stl_rot = output_path_save+obj.name+"_map_percent2m.mat";
+            fname_stl_rot = output_path_save+obj.name+"_map_percent2m.mat";    % Reads angle difference between hmap and "cmap" (satellite photo).
             
             % ~~~~~~~~~~~~~~~ GET HMAP+CMAP ~~~~~~~~~~~~~~~~~~~~
+            new_hmap_counter = 0;
             while true
                 if isfile(fname_stl_rot)
                     load(fname_stl_rot,'rotated_CCW');
@@ -190,6 +202,10 @@ classdef Building
                 else
                     theta_CCW = 0;
                     rotated_CCW = nan;
+                end
+                new_hmap                                     = heights_check(obj.name,obj.pix_length,theta_CCW,input_path_meshes,output_path_save);
+                if new_hmap
+                    new_hmap_counter = new_hmap_counter + 1;
                 end
                 [obj.Z,obj.X,obj.Y,obj.dZdX,obj.dZdY,obj.mesh] = heights_gen(obj.name,obj.pix_length,theta_CCW,input_path_meshes,output_path_save);
                 obj.m = sqrt( (obj.dZdX).^2 + (obj.dZdY).^2 );  % Magnitude of the slope
@@ -199,14 +215,18 @@ classdef Building
 
                 % Convert from pixels to metres! (These arrays will start at
                 % ZERO, not 1, since they don't match indices anymore.)
-                obj.pix2m = pix_to_m(obj.name,obj.Z,theta_CCW,output_path_save); 
-                % ^ Returns pix-to-m conversion factor for height map.
+                obj.pix2m = pix_to_m(obj.name,obj.Z,theta_CCW,output_path_save,input_path_photos); 
+                % ^ Returns pix-to-m conversion factor for height map. Note
+                %   that it may be NaN for now if it is generated automatically.
                 % ^ Also saves inputted `theta_CCW` into '<name>_heightmap_<length>_percent2m.mat'.
+                [obj.map_r, obj.pix2m_r_x, obj.pix2m_r_y] = pix_to_m(obj.name,obj.map,theta_CCW,output_path_save,input_path_photos);
+                % ^ Replaces `pix2m` for heightmap in the savefile.
+                obj.pix2m = pix_to_m(obj.name,obj.Z,theta_CCW,output_path_save,input_path_photos);
+                % ^ Loads the savefile with corrected heightmap.
                 obj.Z = (obj.Z-1)*obj.pix2m;    % Just for consistency, even though heights are all relative to ground anyways.
                 obj.X = (obj.X-1)*obj.pix2m;
                 obj.Y = (obj.Y-1)*obj.pix2m;
                 obj.x = obj.X(1,:); obj.y = obj.Y(:,1);
-                [obj.map_r, obj.pix2m_r_x, obj.pix2m_r_y] = pix_to_m(obj.name,obj.map,output_path_save);
                 % ^ Reprojects cmap to orientation of heightmap, given
                 %   theta_CCW, but re-rotates cmap to face north. The
                 %   output file, '<name>_map_percent2m.mat', tracks how the
@@ -225,15 +245,9 @@ classdef Building
             
             % Normalize "Z" to height of ground
             obj.terrain = ground_gen(obj.Z,obj.X,obj.Y,obj.pix2m);
-%             saveas(figure(1),"output/fancyplot/maps/"+obj.name+"_hmap_terrain.png");
-            Z_ground = prctile(obj.terrain,50,'all');
+            Z_ground = prctile(obj.terrain,50,'all');   % Approximate ground height
             obj.Z = obj.Z - Z_ground;
             obj.terrain = obj.terrain - Z_ground;
-            
-            % Mask out unwanted parts of Z
-            [Z_mask,mask_id] = roi_mask_gen(obj.name,obj.pix_length,obj.Z,obj.map_r,output_path_save);
-            obj.Z_nomask = obj.Z;
-            obj.Z = obj.Z .* Z_mask;
             
             % Solar PV parameters (!!! Maybe set this up in its own
             % function / object? !!!)
@@ -258,14 +272,30 @@ classdef Building
             % Total minimum area of solarPV-feasible rooftop?
             panel_size_pix   = ceil(val(panel_length*panel_width));     % Number of pixels in each solar panel.
             roof_minsize_pix = ceil(val(roof_minlength*roof_minwidth)); % Number of pixels in smallest panel-legal rooftop.
-            % Note: `val(x)` is just `double(separateUnits(x))`.    
+            % Note: `val(x)` is just `double(separateUnits(x))`.
+            
+                % ~~ Generate mask for Heightmap ~~
+                % Find individual surfaces for unmasked heightmap
+                m_max = 12/12;
+                [~,isroof] = find_surfaces(obj.Z,obj.terrain,obj.pix2m, m_max, roof_minsize_pix, roof_mindiameter/2);
+
+                % Mask out unwanted parts of Z
+                if new_hmap_counter>0
+                    % If a new .STL file was read, FORCE mask selection to run!
+                    disp("Detected new .STL file. Running mask generation!");
+                    force_mask = true;
+                else
+                    force_mask = false;
+                end
+                [Z_mask,mask_id] = roi_mask_gen(obj.name,obj.pix_length,obj.Z,obj.map_r,obj.pix2m,isroof,output_path_save,allow_custom_mask,force_mask);
+                obj.Z_nomask = obj.Z;
+                obj.Z = obj.Z .* Z_mask;
+                obj.terrain_nomask = obj.terrain;
+                obj.terrain = obj.terrain .* Z_mask;
             
             % ~~ Roof Identification ~~
             % Identify any region that isn't the ground, an edge, or tiny
             m_max = 12/12;
-%             obj.issurface = find_surfaces(obj.Z,obj.terrain,obj.pix2m, m_max, roof_minsize_pix);
-%             % Identify any surface that can be treated as a roof
-%             obj.isroof = find_roofs(obj.issurface, roof_mindiameter);  % Surfaces that may fit an SPV (??? is `blob_clean` doing it correctly?)
             [~,obj.isroof] = find_surfaces(obj.Z,obj.terrain,obj.pix2m, m_max, roof_minsize_pix, roof_mindiameter/2);
             obj.roofs = blob_heights_split(obj.isroof,obj.Z);     % Roofs, properly separated from each other
             obj.isroof = logical(obj.roofs);                      % Binary for the above
@@ -301,11 +331,11 @@ classdef Building
 %             kmeans_mode = "simple";     % Generates each polygon once, with a higher K-means "Replicates" setting (for consistency).
 %                                         %   MUCH faster, but tends to be a bit less accurate.
 %             kmeans_mode = "smart";      % Generates each polygon once, but reruns K-means numerous times to enhance accuracy.
-            table_polygons = poly_approx(obj.name,obj.info,obj.roofs,obj.roofs_p,mask_id,kmeans_mode,force_run_poly,output_path_save);
+            table_polygons = poly_approx(obj.name,obj.info,obj.roofs,obj.roofs_p,mask_id,obj.pix2m,kmeans_mode,force_run_poly,output_path_save);
             obj.info = [obj.info table_polygons];
 
             % Add shading analysis!
-            obj.shadows = shading_analysis(obj,lat,obj.pix_length,shadow_scale,force_run_shadow,output_path_save);
+            obj.shadows = shading_analysis(obj,lat,obj.pix_length,shadow_scale,(force_run_shadow || force_mask),output_path_save);
         end
         
         
@@ -326,7 +356,7 @@ classdef Building
             
             if ndims(arr)==2
                 % Read output file:
-                output_name = "output/"+obj.name+"_heightmap_"+obj.pix_length+"_percent2m.mat";
+                output_name = obj.output_path_save+obj.name+"_heightmap_"+obj.pix_length+"_percent2m.mat";
                 load(output_name,'X1','X2','Y1','Y2','xmax','ymax','theta_CCW') % Loads 'X1','X2','Y1','Y2','xmax','ymax'.
                 % Rotate coordinates
                 map_dummy = ones(ymax,xmax);
@@ -366,6 +396,10 @@ classdef Building
                 elseif isequaln(arr,obj.Z)
                     % Assumed to be a height map, with same pixel-to-m
                     % conversions as b.Z.
+                    title(sprintf("Height Map of "+obj.name+", masked \n(m)"));
+                elseif isequaln(arr,obj.Z_nomask)
+                    % Assumed to be a height map, with same pixel-to-m
+                    % conversions as b.Z.
                     title(sprintf("Height Map of "+obj.name+"\n(m)"));
                 else
                     % Other?
@@ -389,7 +423,7 @@ classdef Building
                 % conversions as b.map/b.map_r.
                 % Read output file, for percent positions of 2 points:
                 xmax_plot = size(arr,2);    ymax_plot = size(arr,1);
-                output_name = "output/"+obj.name+"_map_percent2m.mat";
+                output_name = obj.output_path_save+obj.name+"_map_percent2m.mat";
                 load(output_name,'map_r','X1_r','X2_r','Y1_r','Y2_r','xmax_r','ymax_r', ...
                                  'map','X1','X2','Y1','Y2','xmax','ymax', ...
                                  'pix2m_x','pix2m_y');

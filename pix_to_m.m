@@ -14,6 +14,11 @@ function varargout = pix_to_m(varargin)
 %   theta_CCW (optional) : double
 %       Angle that the map has been rotated CCW, in degrees. (Currently
 %       used only for height map.)
+%   output_path_save (="output/") : string
+%       Output "savefile" path.
+%   input_path_photos (="images/") : string
+%       Input path for photos. Used for getting satellite photo height in
+%       metres.
 %
 %   Returns:
 %   --------
@@ -24,9 +29,10 @@ function varargout = pix_to_m(varargin)
 %   [pix2m_x, pix2m_y] : double
 %       Conversion factors between pixels and metres, for x-axis and y-axis
 %       respectively.
-%       Only works when `arr` is a 3D 
+%       Only works when `arr` is a 3D "colormap" (e.g. satellite photo).
 
     output_path_save = "output/";
+    input_path_photos = "images/";
 
     switch nargin
         case 2
@@ -47,6 +53,12 @@ function varargout = pix_to_m(varargin)
             arr = varargin{2};
             theta_CCW = varargin{3};
             output_path_save = varargin{4};
+        case 5
+            name = varargin{1};
+            arr = varargin{2};
+            theta_CCW = varargin{3};
+            output_path_save = varargin{4};
+            input_path_photos = varargin{5};
         otherwise
             error("Use `pix_to_m(name,arr)` or `pix_to_m(name,arr,theta_CCW)`.");
     end
@@ -115,27 +127,39 @@ function varargout = pix_to_m(varargin)
                     title("Select point B.");
                     [X2,Y2] = ginput(1);
                     if ~isempty(findobj('type','figure','name',name))
-                        % Next prompt if figure wasn't closed
-                        c = newline;
-                        prompt = "Real horizontal distance between the points, from Google Earth, in metres:";
-                        dlgtitle = 'Input';
-                        dims = [1 40];
-                        answer = inputdlg(prompt,dlgtitle,dims);
-                        dist_m       = str2num(answer{1});
-                        dist_pix     = sqrt( (X2-X1)^2 + (Y2-Y1)^2 );
+                        % Check if satellite photo height (in m) is
+                        % saved in a .mat file. If not, then user will
+                        % be prompted to input true distance directly.
+                        fname  = input_path_photos+string(name);    % Filename for image AND saved height
+                        % Read file
+                        if isfile(fname+".mat")
+                            % Automatic conversion is possible!
+                            warning("pix_to_m() : Automatic conversion to real-world units is possible! Returning bogus `pix2m` for now.");
+                            dist_m = nan;       % Bogus distance between points A and B.
+                        else
+                            % Automatic conversion is not possible, and
+                            % needs to be inputted manually.
+                            % Next prompt if figure wasn't closed:
+                            prompt = "Real horizontal distance between the points, from Google Earth, in metres:";
+                            dlgtitle = 'Input';
+                            dims = [1 40];
+                            answer = inputdlg(prompt,dlgtitle,dims);
+                            dist_m       = str2num(answer{1});  % Real distance between points A and B.
+                        end
+                        dist_pix     = sqrt( (X2-X1)^2 + (Y2-Y1)^2 );   % Distance between selected points on hmap in "pixels"
                         pix2m     = dist_m / dist_pix;
                         pix2m_x   = pix2m;
                         pix2m_y   = pix2m;
                         xmax = size(Z,2);   ymax = size(Z,1);
+                        close;
                         % Convert to m; display once more.
                         % (These arrays will start at ZERO, not 1, since they 
                         % don't match indices anymore.)
-                        x = 1:xmax; y = 1:ymax;
-                        [X,Y] = meshgrid(x,y);
-                        Z = (Z-1) * pix2m;
-                        X = (X-1) * pix2m;
-                        Y = (Y-1) * pix2m;
-                        close;
+%                         x = 1:xmax; y = 1:ymax;
+%                         [X,Y] = meshgrid(x,y);
+%                         Z = (Z-1) * pix2m;
+%                         X = (X-1) * pix2m;
+%                         Y = (Y-1) * pix2m;
 %                         surf(X,Y,Z,'edgecolor','none');
 %                         set(gca,'ydir','reverse');  colormap(brewermap([],'RdYlBu'));
 %                         colorbar;
@@ -152,20 +176,15 @@ function varargout = pix_to_m(varargin)
     elseif isequal(mode,'map')
         if ~isfile(output_name_heightmap)
             % If 3D output does not exist:
-            disp("3D mesh needed to account for camera tilt. However, "+...
-                 output_name_heightmap+" not found. Running `pix_to_m` for 3D mesh.");
+            error("3D mesh needed to account for camera tilt. However, "+...
+                 output_name_heightmap+" not found.");
             heights_gen(name);
-            % ^ (?) Does this help? Shouldn't I be running `pix_to_m` on
-            % heightmap instead of just heights_gen?
+            % ^ This didn't come up much in the main algorithm, so it's
+            % left as an error.
         end
         % Rename the `<building>_heightmap_percent2m.mat` variables for
         % safekeeping!
         load(output_name_heightmap,'pix2m','X1','Y1','X2','Y2','xmax','ymax');
-        X1_h = X1;    Y1_h = Y1;
-        X2_h = X2;    Y2_h = Y2;
-        xmax_h = xmax;  ymax_h = ymax;
-        pix2m_h = pix2m;
-        clear('X1','Y1','X2','Y2','xmax','ymax','pix2m');    % Renames all of these variables.
 
         if isfile(output_name)
             load(output_name,'map_r','X1_r','X2_r','Y1_r','Y2_r','xmax_r','ymax_r', ...
@@ -179,7 +198,7 @@ function varargout = pix_to_m(varargin)
             % Make the plot!
             figure('name',name);
             map = arr;
-            xmax = size(map,2); ymax = size(map,1);
+            xmax_c = size(map,2); ymax_c = size(map,1);
             imagesc(map); daspect([1 1 1]); %set(gca, 'ydir', 'normal'); 
             axis image;
             xlabel('X (pixels)'); ylabel('Y (pixels)'); title(sprintf("Colour Map of "+name));
@@ -197,7 +216,7 @@ function varargout = pix_to_m(varargin)
             if ~isempty(findobj('type','figure','name',name))
                 title("Select point A.");
                 % If figure wasn't closed, input X1,Y1.
-                [X1,Y1] = ginput(1);
+                [X1_c,Y1_c] = ginput(1);
                 set(gcf, 'CurrentCharacter', ' ');
                 zoom on;
                 title("Please press ENTER when finished zooming, to begin selecting point B.");
@@ -205,11 +224,61 @@ function varargout = pix_to_m(varargin)
                 if ~isempty(findobj('type','figure','name',name))
                     % If figure wasn't closed, input X2,Y2.
                     title("Select point B.");
-                    [X2,Y2] = ginput(1);
+                    [X2_c,Y2_c] = ginput(1);
                 end
                 zoom on;
             end
+            close;
+            
+                % BEFORE CONTINUING: Convert height map's pixel units to
+                % real-world units!
+                
+                % Check if satellite photo height (in m) is
+                % saved in a .mat file. 
+                % If not, then it is assumed that pix2m_h has already been
+                % found (through the manual Google Earth method).
+                fname  = input_path_photos+string(name);    % Filename for image AND saved height
+                % Read satellite photo (which SHOULD BE IDENTICAL to `map`, but
+                % may be rotated from it depending on code alterations)
+                if isfile(fname+".png")
+                    photo = imread(fname+".png");
+                elseif isfile(fname+".jpg")
+                    photo = imread(fname+".jpg");
+                else
+                    error("pix2m(cmap) : "+fname+".png and "+fname+".jpg do not exist.");
+                    return;
+                end
+                % Read .mat file
+                if isfile(fname+".mat")
+                    % Automatic conversion is possible!
+                    load(fname+".mat","cmap_height");
+                    dist_pix_h  = sqrt( (X2-X1)^2 + (Y2-Y1)^2 );            % Distance between selected points on hmap, in "pixels"
+                    dist_pix_c    = sqrt( (X2_c-X1_c)^2 + (Y2_c-Y1_c)^2 );  % Distance between selected points on cmap, in pixels
+                    c_per_h = dist_pix_c / dist_pix_h;              % Colourmap pixels (before reprojection) per heightmap pixel
+                    pix2m_c = str2num(cmap_height) / size(photo,1); % Metres per colourmap pixel (before reprojection)
+                    pix2m = pix2m_c * c_per_h;                      % Heightmap pixels
+                    save(output_name_heightmap,'pix2m','X1','Y1','X2','Y2','xmax','ymax');
+                else
+                    % Automatic conversion is not possible, and
+                    % needs to be inputted manually.
+                    if isnan(pix2m)
+                        error("pix2m(cmap) : '"+name+".mat' does not exist so pix2m (for hmap) should have already been inputted manually... but it wasn't!");
+                    end
+                    % Do nothing
+                end
+                
+            % Swap variable names around: <X> -> <X_h>,
+            % and <X_c> -> <X>.
+            X1_h = X1;    Y1_h = Y1;
+            X2_h = X2;    Y2_h = Y2;
+            xmax_h = xmax;  ymax_h = ymax;
+            pix2m_h = pix2m;
+            clear('X1','Y1','X2','Y2','xmax','ymax','pix2m');    % Renames all of these variables.
 
+            xmax = xmax_c;  ymax = ymax_c;
+            X1 = X1_c;      X2 = X2_c;
+            Y1 = Y1_c;      Y2 = Y2_c;
+                
             % Create dummy heightmap for reprojecting
             heightmap_dummy = zeros(ymax_h,xmax_h,1);
             % Reproject!
@@ -230,16 +299,16 @@ function varargout = pix_to_m(varargin)
             pix2m_y = dist_y / (ymax_r - 1);
 
             % Display map once more; make sure it's correct!
-            imshow(map_r, 'XData', (0:(xmax_r-1))*pix2m_x, 'YData', (0:(ymax_r-1))*pix2m_y); axis on;
-%             imshow(map_r); axis on;
-            xlabel('X (m)');    ylabel('Y (m)');
-            daspect([1 1 1]);
-            
-            hold on; scatter(X1_r*pix2m_x,Y1_r*pix2m_y,1000,'red','X'); hold off;
-            hold on; scatter(X2_r*pix2m_x,Y2_r*pix2m_y,1000,'red','X'); hold off;
-%             hold on; scatter(X1_r,Y1_r,1000,'red','X'); hold off;
-%             hold on; scatter(X2_r,Y2_r,1000,'red','X'); hold off;
-            title("Reprojected colour map. If incorrect, delete '"+replace(output_name,'_','\_')+"' and retry!")
+%             imshow(map_r, 'XData', (0:(xmax_r-1))*pix2m_x, 'YData', (0:(ymax_r-1))*pix2m_y); axis on;
+% %             imshow(map_r); axis on;
+%             xlabel('X (m)');    ylabel('Y (m)');
+%             daspect([1 1 1]);
+%             
+%             hold on; scatter(X1_r*pix2m_x,Y1_r*pix2m_y,1000,'red','X'); hold off;
+%             hold on; scatter(X2_r*pix2m_x,Y2_r*pix2m_y,1000,'red','X'); hold off;
+% %             hold on; scatter(X1_r,Y1_r,1000,'red','X'); hold off;
+% %             hold on; scatter(X2_r,Y2_r,1000,'red','X'); hold off;
+%             title("Reprojected colour map. If incorrect, delete '"+replace(output_name,'_','\_')+"' and retry!")
             save(output_name,'map_r','X1_r','X2_r','Y1_r','Y2_r','xmax_r','ymax_r', ...
                              'map','X1','X2','Y1','Y2','xmax','ymax', ...
                              'pix2m_x','pix2m_y','rotated_CCW');

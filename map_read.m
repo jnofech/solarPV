@@ -36,14 +36,18 @@ function map = map_read(name,input_path_photos,output_path_save)
         title(fname);
         cmap_dir = 'None';
         while strcmp(cmap_dir,'None')
-            button = questdlg('Select '+name+' colourmap direction. (Press ESC to skip this step)', ...
-                              'FUNCTION(): '+name+' colourmap direction', 'North', 'East', 'Next', 'North');
-            if strcmp(button, 'North') | strcmp(button, 'East') | strcmp(button,'')
+            % Ask for direction of satellite photo.
+%             button = questdlg('Select '+name+' colourmap direction. (Press ESC to skip this step)', ...
+%                               'FUNCTION(): '+name+' colourmap direction', 'North', 'East', 'Next', 'North');
+            % Actually, skip that-- everything in Google Maps is facing
+            % North anyways.
+            button = 'North';
+            if strcmp(button, 'North') || strcmp(button, 'East') || strcmp(button,'')
                 cmap_dir = button;
             else
                 button = questdlg('Select '+name+' colourmap direction. (Press ESC to skip this step)', ...
                                   'FUNCTION(): '+name+' colourmap direction', 'South', 'West', 'Previous', 'South');
-                if strcmp(button, 'South') | strcmp(button, 'West') | strcmp(button,'')
+                if strcmp(button, 'South') || strcmp(button, 'West') || strcmp(button,'')
                     cmap_dir = button;
                 elseif strcmp(button, 'Previous')
                     cmap_dir = 'None';

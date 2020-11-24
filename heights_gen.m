@@ -79,8 +79,8 @@ function varargout = heights_gen(varargin)
     % If "<name>_<length>pix.mat" does not exist, OR "<name>.stl" has been
     % modified since last run, OR "<name>.stl" has not been used before
     if ~isfile(output_name) ...
-            | ~isequal(p,p_backup) ...
-            | ~isstruct(p_backup) % <-- Redundant?
+            || ~isequal(p,p_backup) ...
+            || ~isstruct(p_backup) % <-- Redundant?
         % Create backup of new mesh "p", and save it
         % Build triangulation data structure (for Cartesian->Barycentric)
         fprintf('Either the .stl file has been altered or the heightmap has not been generated before. Generating new heightmap...\n');
@@ -153,7 +153,7 @@ function varargout = heights_gen(varargin)
         save(output_name,'Z','dZdX','dZdY','X','Y','p');
     else    % if "<name>_<length>pix.mat" exists, and "<name>.stl" is unchanged
         fprintf('Loading previous results!\n');
-        load(output_name);
+        load(output_name,'Z','dZdX','dZdY','X','Y','p');
     end
     
     switch nargout        

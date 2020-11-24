@@ -208,27 +208,32 @@ function [corners,score] = find_poly(varargin)
     corners = corner_outputs{best_attempt,1};
     score   = corner_outputs{best_attempt,2};
     
-    % Draw best polygon!
-    map_polygon = zeros(size(edges));
-    for j = 1:size(corners,1)
-        x_current = corners(j,1);
-        y_current = corners(j,2);
-        if j~=size(corners,1)
-            x_next = corners(j+1,1);
-            y_next = corners(j+1,2);
-        else
-            x_next = corners(1,1);
-            y_next = corners(1,2);
-        end
-        % Draw a line from current corner to next corner!
-        [x_b,y_b] = bresenham(x_current,y_current,x_next,y_next);
-        line_len = length(x_b);
-        for k = 1:line_len
-            x = x_b(k);
-            y = y_b(k);
-            map_polygon(y,x) = 1;
-        end
+    % Force polygon to be counterclockwise, if this was not already the case
+    if is_clockwise(corners)
+        corners = flipud(corners);
     end
+    
+%     % Draw best polygon!
+%     map_polygon = zeros(size(edges));
+%     for j = 1:size(corners,1)
+%         x_current = corners(j,1);
+%         y_current = corners(j,2);
+%         if j~=size(corners,1)
+%             x_next = corners(j+1,1);
+%             y_next = corners(j+1,2);
+%         else
+%             x_next = corners(1,1);
+%             y_next = corners(1,2);
+%         end
+%         % Draw a line from current corner to next corner!
+%         [x_b,y_b] = bresenham(x_current,y_current,x_next,y_next);
+%         line_len = length(x_b);
+%         for k = 1:line_len
+%             x = x_b(k);
+%             y = y_b(k);
+%             map_polygon(y,x) = 1;
+%         end
+%     end
     
 
 %             % Smooth out edges
