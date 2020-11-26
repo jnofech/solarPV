@@ -6,6 +6,7 @@ function plot_figures(b,pix_length,lat,output_path,output_path_save)
     output_path = output_path+"figures\";
     temp_paths = [output_path+"maps\";
                   output_path+"identified\";
+                  output_path+"polygons\"+name+"\";
                   output_path+"comparisons\"];
     for i = 1:size(temp_paths,1)
         temp_path = temp_paths(i);
@@ -48,12 +49,25 @@ function plot_figures(b,pix_length,lat,output_path,output_path_save)
     width=1920;height=1080;
     set(gcf,'position',[0,0,width,height]);
     subplot(1,2,1);
-    b.plot(b.Z);
+    b.plot(b.Z_nomask);
     ax = gca; ax.FontSize = fontsize;
     subplot(1,2,2);
     b.plot(b.map_r);
     ax = gca; ax.FontSize = fontsize;
     saveas(figure(1),output_path+"maps/"+name+"_both.png");
+    close(1);
+    
+    % Height+Colour maps combined, masked
+    figure(1);
+    width=1920;height=1080;
+    set(gcf,'position',[0,0,width,height]);
+    subplot(1,2,1);
+    b.plot(b.Z);
+    ax = gca; ax.FontSize = fontsize;
+    subplot(1,2,2);
+    b.plot(b.map_r);
+    ax = gca; ax.FontSize = fontsize;
+    saveas(figure(1),output_path+"maps/"+name+"_both_masked.png");
     close(1);
 
     % % Surfaces
@@ -111,13 +125,50 @@ function plot_figures(b,pix_length,lat,output_path,output_path_save)
     imagesc(rooftype); axis image;
     % cmap = cat(1,0.15*[1,1,1],pink(3));
     cmap = cat(1,0.15*[1,1,1],[0.5774,0,0],[0.8165    0.7165    0.3774],[0.9,0.9,0.8]);
-    colormap(cmap);
+    colormap(cmap); caxis([0,3]);
     L = line(ones(size(cmap,1)-1),ones(size(cmap,1)-1),'LineWidth',10);
     set(L,{'color'},mat2cell(cmap(2:end,:),ones(1,size(cmap,1)-1),size(cmap,2)));            % set the colors according to cmap
     legend(L, {'irregular', 'slanted','flat'}, 'Location','southwest')
     ax = gca; ax.FontSize = fontsize*2/3;
     title(name+": Rooftop Classifications"+newline+"('irregular' roofs are discarded)");
     saveas(figure(1),output_path+"maps/"+name+"_roof_types.png");
+    close(1);
+    
+    % Roof types, labeled, and compared with satellite photos
+    
+            % Height+Colour maps combined
+            figure(1);
+            subplot(1,2,1);
+            b.plot(b.Z);
+            ax = gca; ax.FontSize = fontsize;
+            subplot(1,2,2);
+%             b.plot(b.map_r);
+%             ax = gca; ax.FontSize = fontsize;
+%             saveas(figure(1),output_path+"maps/"+name+"_both.png");
+%             close(1);
+    
+    figure(1);
+    width=1920;height=1080;
+    set(gcf,'position',[0,0,width,height]);
+    subplot(1,2,1);
+    b.plot(b.map_r);
+    ax = gca; ax.FontSize = fontsize;
+    subplot(1,2,2);    
+    rooftype = zeros(size(b.roofs)); % Will be labeled according to type
+    for i = 1:max(b.roofs,[],'all')
+        type = b.info.type(b.info.roof==i);
+        rooftype(b.roofs==i) = 3*(type=='flat') + 2*(type=='slanted') + 1*(type=='irregular');
+    end
+    imagesc(rooftype); axis image;
+    % cmap = cat(1,0.15*[1,1,1],pink(3));
+    cmap = cat(1,0.15*[1,1,1],[0.5774,0,0],[0.8165    0.7165    0.3774],[0.9,0.9,0.8]);
+    colormap(cmap);
+    L = line(ones(size(cmap,1)-1),ones(size(cmap,1)-1),'LineWidth',10);
+    set(L,{'color'},mat2cell(cmap(2:end,:),ones(1,size(cmap,1)-1),size(cmap,2)));            % set the colors according to cmap
+    legend(L, {'irregular', 'slanted','flat'}, 'Location','southwest')
+    ax = gca; ax.FontSize = fontsize*2/3;
+    title(name+": Rooftop Classifications"+newline+"('irregular' roofs are discarded)");
+    saveas(figure(1),output_path+"comparisons/"+name+"_cmap_vs_roof_types.png");
     close(1);
 
 
@@ -222,4 +273,16 @@ function plot_figures(b,pix_length,lat,output_path,output_path_save)
         saveas(figure(1),output_path+"maps/"+name+"_shadows_"+date+".png");
         close(1);
     end
+    
+    % Plot all polygons
+    n_roofs = max(b.roofs,[],'all');
+    for i = 1:n_roofs
+        figure(1);
+        width=1366;height=768;
+        set(gcf,'position',[200,200,width,height]);
+
+        b.roofplot(i);
+        saveas(figure(1),output_path+"polygons\"+name+"\"+name+"_polygon_"+i+".png");
+    end
+    close(1);
 end

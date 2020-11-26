@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="2917597575" file="C:\Users\Win10\Desktop\EMSO_buildings_app_v2.0\EMSO_solarPV_optimizer.prj" location="C:\Users\Win10\Desktop\EMSO_buildings_app_v2.0" name="EMSO_solarPV_optimizer" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="2493070578" file="C:\Users\Win10\Desktop\EMSO_buildings_app_v2.1\EMSO_solarPV_optimizer.prj" location="C:\Users\Win10\Desktop\EMSO_buildings_app_v2.1" name="EMSO_solarPV_optimizer" target="target.mlapps" target-name="Package App">
     <param.appname>EMSO_solarPV_optimizer</param.appname>
     <param.authnamewatermark>Joseph Nofech</param.authnamewatermark>
     <param.email>jnofech@ualberta.ca</param.email>
@@ -17,7 +17,7 @@ Other versions of these softwares have not been tested, and may not work.
 
 Also note that these three softwares MUST have shortcuts respectively named "RenderDoc", "Chromium", and "Blender" in the main file path.</param.description>
     <param.screenshot>${PROJECT_ROOT}\UI_optimizer_v1.0.png</param.screenshot>
-    <param.version>2.0</param.version>
+    <param.version>2.1</param.version>
     <param.products.name>
       <item>MATLAB</item>
     </param.products.name>
@@ -109,7 +109,7 @@ Also note that these three softwares MUST have shortcuts respectively named "Ren
     </fileset.resources>
     <fileset.package />
     <build-deliverables>
-      <file location="C:\Users\Win10\Desktop" name="EMSO_buildings_app_v2.0" optional="false">C:\Users\Win10\Desktop\EMSO_buildings_app_v2.0</file>
+      <file location="C:\Users\Win10\Desktop" name="EMSO_buildings_app_v2.1" optional="false">C:\Users\Win10\Desktop\EMSO_buildings_app_v2.1</file>
     </build-deliverables>
     <workflow />
     <matlab>

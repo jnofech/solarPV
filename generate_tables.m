@@ -72,7 +72,7 @@ function generate_tables(name,clrsky,folder_output)
     names_var(1,1)="Building";names_var(1,2)="Roof";names_var(1,3)="Number";names_var(1,4)="Generation(kWh)";
     T1=array2table(T,'VariableNames',names_var);
     % writetable(T1,'Genration-number.xlsx')
-        writetable(T1,'output/'+name+'_Genration-number.xlsx')
+        writetable(T1,folder_output+name+'_Genration-number.xlsx')
 end
 
 function [num, numbers_panel, alpha_p, alpha_s, az_solar, G, G_cs, Generation, omega, max_Gen]=Panels_number(x_v, y_v,clrsky)    
